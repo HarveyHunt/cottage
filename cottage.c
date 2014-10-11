@@ -54,27 +54,27 @@ int main(int argc, char *argv[])
 		perror("Failed to receive response");
 
 	switch (ret) {
-		case IPC_ERR_SYNTAX:
-			printf("Invalid syntax.\n");
-			break;
-		case IPC_ERR_ALLOC:
-			printf("Couldn't allocate memory to store args.\n");
-			break;
-		case IPC_ERR_NO_CMD:
-			printf("Invalid syntax.\n");
-			break;
-		case IPC_ERR_TOO_MANY_ARGS:
-			printf("Too many args.\n");
-			break;
-		case IPC_ERR_TOO_FEW_ARGS:
-			printf("Too few args.\n");
-			break;
-		case IPC_ERR_ARG_NOT_INT:
-			printf("Argument wasn't an int\n");
-			break;
-		case IPC_ERR_ARG_TOO_LARGE:
-			printf("Argument was too large\n");
-			break;
+	case IPC_ERR_SYNTAX:
+		printf("Invalid syntax.\n");
+		break;
+	case IPC_ERR_ALLOC:
+		printf("Couldn't allocate memory to store args.\n");
+		break;
+	case IPC_ERR_NO_CMD:
+		printf("Invalid syntax.\n");
+		break;
+	case IPC_ERR_TOO_MANY_ARGS:
+		printf("Too many args.\n");
+		break;
+	case IPC_ERR_TOO_FEW_ARGS:
+		printf("Too few args.\n");
+		break;
+	case IPC_ERR_ARG_NOT_INT:
+		printf("Argument wasn't an int\n");
+		break;
+	case IPC_ERR_ARG_TOO_LARGE:
+		printf("Argument was too large\n");
+		break;
 	}
 
 	close(sock);
