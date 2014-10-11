@@ -8,11 +8,15 @@
 #define SOCK_PATH "/tmp/howm"
 #define BUF_SIZE 1024
 
+enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_CMD, IPC_ERR_TOO_MANY_ARGS,
+	IPC_ERR_TOO_FEW_ARGS, IPC_ERR_ARG_NOT_INT, IPC_ERR_ARG_TOO_LARGE };
+
 int main(int argc, char *argv[])
 {
 	struct sockaddr_un addr;
 	int sock, len = 0, off = 0, n = 0;
 	char data[BUF_SIZE];
+	int ret, rec;
 
 	if (argc < 2) {
 		printf("usage: cottage <command> [<args>]\n");
@@ -45,5 +49,34 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	rec = recv(sock, &ret, sizeof(ret), 0);
+	if (rec == -1)
+		perror("Failed to receive response");
+
+	switch (ret) {
+		case IPC_ERR_SYNTAX:
+			printf("Invalid syntax.\n");
+			break;
+		case IPC_ERR_ALLOC:
+			printf("Couldn't allocate memory to store args.\n");
+			break;
+		case IPC_ERR_NO_CMD:
+			printf("Invalid syntax.\n");
+			break;
+		case IPC_ERR_TOO_MANY_ARGS:
+			printf("Too many args.\n");
+			break;
+		case IPC_ERR_TOO_FEW_ARGS:
+			printf("Too few args.\n");
+			break;
+		case IPC_ERR_ARG_NOT_INT:
+			printf("Argument wasn't an int\n");
+			break;
+		case IPC_ERR_ARG_TOO_LARGE:
+			printf("Argument was too large\n");
+			break;
+	}
+
 	close(sock);
+	return ret;
 }
