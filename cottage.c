@@ -44,12 +44,12 @@ int main(int argc, char *argv[])
 		len += n;
 	}
 
-	if (send(sock, data, len, 0) == -1) {
+	if (write(sock, data, len) == -1) {
 		perror("Failed to send data");
 		exit(EXIT_FAILURE);
 	}
 
-	rec = recv(sock, &ret, sizeof(ret), 0);
+	rec = read(sock, &ret, sizeof(ret));
 	if (rec == -1)
 		perror("Failed to receive response");
 
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 		printf("Couldn't allocate memory to store args.\n");
 		break;
 	case IPC_ERR_NO_CMD:
-		printf("Invalid syntax.\n");
+		printf("No such command.\n");
 		break;
 	case IPC_ERR_TOO_MANY_ARGS:
 		printf("Too many args.\n");
