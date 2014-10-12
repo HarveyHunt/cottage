@@ -1,0 +1,9 @@
+-nullassign
+-boolops
+-paramuse
+-warnposix
+-fullinitblock
+-casebreak
+-predboolint
++boolint
++matchanyintegral

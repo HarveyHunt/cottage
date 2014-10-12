@@ -77,6 +77,9 @@ int main(int argc, char *argv[])
 		break;
 	}
 
-	close(sock);
+	if (close(sock) == -1) {
+		printf("Failed to close socket.\n");
+		exit(EXIT_FAILURE);
+	}
 	return ret;
 }
