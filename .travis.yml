@@ -4,6 +4,7 @@ compiler:
     - gcc
 before_script:
     - wget https://raw.githubusercontent.com/torvalds/linux/master/scripts/checkpatch.pl
+    - wget https://github.com/torvalds/linux/blob/master/scripts/spelling.txt
     - chmod +x checkpatch.pl
 script: make debug && make check
 notifications:

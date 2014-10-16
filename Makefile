@@ -117,7 +117,7 @@ install:
 .PHONY: check
 check:
 	@echo "Using checkpatch.pl to check style."
-	@./checkpatch.pl --no-tree --ignore LONG_LINE,NEW_TYPEDEFS,UNNECESSARY_ELSE,TYPO_SPELLING -f cottage.c
+	@./checkpatch.pl --no-tree --ignore LONG_LINE,NEW_TYPEDEFS,UNNECESSARY_ELSE, -f cottage.c
 
 # Removes all build files
 .PHONY: clean
