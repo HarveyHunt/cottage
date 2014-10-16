@@ -8,9 +8,11 @@
 #define SOCK_PATH "/tmp/howm"
 #define BUF_SIZE 1024
 
+/* The errors (or lack of) that could be sent back by howm. */
 enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_CMD, IPC_ERR_TOO_MANY_ARGS,
 	IPC_ERR_TOO_FEW_ARGS, IPC_ERR_ARG_NOT_INT, IPC_ERR_ARG_TOO_LARGE };
 
+/* Send a command to howm and wait for its reply. */
 int main(int argc, char *argv[])
 {
 	struct sockaddr_un addr;
@@ -81,5 +83,6 @@ int main(int argc, char *argv[])
 		printf("Failed to close socket.\n");
 		exit(EXIT_FAILURE);
 	}
+
 	return ret;
 }
