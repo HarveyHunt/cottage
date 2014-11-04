@@ -1,7 +1,9 @@
+#include <ctype.h>
 #include <sys/socket.h>
 #include <string.h>
 #include <sys/un.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -11,6 +13,9 @@
 /* The errors (or lack of) that could be sent back by howm. */
 enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_CMD, IPC_ERR_TOO_MANY_ARGS,
 	IPC_ERR_TOO_FEW_ARGS, IPC_ERR_ARG_NOT_INT, IPC_ERR_ARG_TOO_LARGE };
+enum msg_type { MSG_FUNCTION = 1, MSG_CONFIG };
+
+void usage(void);
 
 /* Send a command to howm and wait for its reply. */
 int main(int argc, char *argv[])
@@ -18,14 +23,36 @@ int main(int argc, char *argv[])
 	struct sockaddr_un addr;
 	int sock, len = 0, off = 0, n = 0;
 	char data[BUF_SIZE];
-	int ret, rec;
+	int ret, rec, ch, type = 0;
 
-	if (argc < 2) {
-		fprintf(stderr, "usage: cottage <command> [<args>]\n");
-		exit(EXIT_FAILURE);
+	if (argc < 2)
+		usage();
+
+	while ((ch = getopt(argc, argv, "cf")) != -1) {
+		switch(ch) {
+		case 'c':
+			if (type)
+				usage();
+			else
+				type = MSG_CONFIG;
+				break;
+		case 'f':
+			if (type)
+				usage();
+			else
+				type = MSG_FUNCTION;
+				break;
+		default:
+			usage();
+		}
 	}
 
-	argc--, argv++;
+	if (!type)
+		usage();
+
+	argc -= 2;
+	argv += 2;
+
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
 	snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", SOCK_PATH);
@@ -41,6 +68,9 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	n = snprintf(data, sizeof(data) - (2 * sizeof(char)), "%c%c", type, 0);
+	len += n;
+	off += n;
 	for (; argc > 0 && sizeof(data) - off > 0; off += n, argc--, argv++) {
 		n = snprintf(data + off, sizeof(data) - off, "%s%c", *argv, 0);
 		len += n;
@@ -85,4 +115,10 @@ int main(int argc, char *argv[])
 	}
 
 	return ret;
+}
+
+void usage(void)
+{
+	fprintf(stderr, "usage: cottage -f|-c <args>\n");
+	exit(EXIT_FAILURE);
 }
