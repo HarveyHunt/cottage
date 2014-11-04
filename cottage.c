@@ -15,7 +15,7 @@ enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_CMD, IPC
 	IPC_ERR_TOO_FEW_ARGS, IPC_ERR_ARG_NOT_INT, IPC_ERR_ARG_TOO_LARGE };
 enum msg_type { MSG_FUNCTION = 1, MSG_CONFIG };
 
-void usage(void);
+static void usage(void);
 
 /* Send a command to howm and wait for its reply. */
 int main(int argc, char *argv[])
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 		usage();
 
 	while ((ch = getopt(argc, argv, "cf")) != -1) {
-		switch(ch) {
+		switch (ch) {
 		case 'c':
 			if (type)
 				usage();
