@@ -11,7 +11,7 @@
 #define BUF_SIZE 1024
 
 /* The errors (or lack of) that could be sent back by howm. */
-enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_CMD, IPC_ERR_TOO_MANY_ARGS,
+enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_FUNC, IPC_ERR_TOO_MANY_ARGS,
 	IPC_ERR_TOO_FEW_ARGS, IPC_ERR_ARG_NOT_INT, IPC_ERR_ARG_TOO_LARGE, IPC_ERR_UNKNOWN_TYPE };
 enum msg_type { MSG_FUNCTION = 1, MSG_CONFIG };
 
@@ -92,8 +92,8 @@ int main(int argc, char *argv[])
 	case IPC_ERR_ALLOC:
 		fprintf(stderr, "Couldn't allocate memory to store args.\n");
 		break;
-	case IPC_ERR_NO_CMD:
-		fprintf(stderr, "No such command.\n");
+	case IPC_ERR_NO_FUNC:
+		fprintf(stderr, "No such function.\n");
 		break;
 	case IPC_ERR_TOO_MANY_ARGS:
 		fprintf(stderr, "Too many args.\n");
