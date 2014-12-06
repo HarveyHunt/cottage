@@ -3,7 +3,7 @@ cottage
 [![Build Status](https://travis-ci.org/HarveyHunt/cottage.svg?branch=develop)](https://travis-ci.org/HarveyHunt/cottage)
 
 
-###Use howm's commands and operators through a UNIX socket.
+###Use howm's commands, operators and set configuration values through a UNIX socket.
 
 Contents
 ========
@@ -29,10 +29,24 @@ Configuration is extremely minimal and is done from within the cottage source fi
 
 ## Usage
 
-Cottage should be used in the following manner:
+Changing howm's config value is done in the following manner:
 
 ```
-cottage [command/operator] <args>
+cottage -c config_var value
+```
+
+Calling one of howm's functions is done in the following manner:
+
+```
+cottage -f function_name <args>
+```
+
+It is possible to call operators using cottage, but it requires you call functions to set the operator, the count and finally the motion. Here is an example:
+
+```
+cottage -f op_kill
+cottage -f set_count 2
+cottage -f motion w
 ```
 
 ## Errors
