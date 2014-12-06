@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <getopt.h>
 
 #define SOCK_PATH "/tmp/howm"
 #define BUF_SIZE 1024
