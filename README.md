@@ -7,9 +7,28 @@ cottage
 
 Contents
 ========
+* [Installation](#installation)
 * [Configuration] (#configuration)
 * [Usage] (#usage)
 * [Errors] (#errors)
+
+##Installation
+
+##Installation
+Cottage is on the [AUR](https://aur.archlinux.org/), there are two packages for it:
+* [cottage-git](https://aur.archlinux.org/packages/cottage-git/) is the bleeding edge package.
+* [cottage-x11](https://aur.archlinux.org/packages/cottage-x11/) is the package based off of stable releases.
+
+If you can't use the AUR, then there may be a package available for your distro.
+
+As a last resort, do the following:
+
+```
+git clone https://github.com/HarveyHunt/cottage
+cd cottage
+make
+sudo make install
+```
 
 ## Configuration
 
