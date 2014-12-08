@@ -17,7 +17,7 @@ Contents
 ##Installation
 Cottage is on the [AUR](https://aur.archlinux.org/), there are two packages for it:
 * [cottage-git](https://aur.archlinux.org/packages/cottage-git/) is the bleeding edge package.
-* [cottage-x11](https://aur.archlinux.org/packages/cottage-x11/) is the package based off of stable releases.
+* [cottage](https://aur.archlinux.org/packages/cottage/) is the package based off of stable releases.
 
 If you can't use the AUR, then there may be a package available for your distro.
 
