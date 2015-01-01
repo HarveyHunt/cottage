@@ -24,7 +24,7 @@ DLINK_FLAGS =
 # Destination directory, like a jail or mounted system
 DESTDIR = /
 # Install path (bin/ is appended automatically)
-INSTALL_PREFIX = usr/local
+INSTALL_PREFIX = usr
 #### END PROJECT SETTINGS ####
 
 # Generally should not need to edit below this line
