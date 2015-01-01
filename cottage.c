@@ -1,12 +1,10 @@
-#include <ctype.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <sys/un.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
-#include <getopt.h>
 
 #define SOCK_PATH "/tmp/howm"
 #define BUF_SIZE 1024
@@ -24,31 +22,16 @@ int main(int argc, char *argv[])
 	struct sockaddr_un addr;
 	int sock, len = 0, off = 0, n = 0;
 	char data[BUF_SIZE];
-	int ret, rec, ch, type = 0;
+	int ret, rec, type = 0;
 
 	if (argc < 2)
 		usage();
 
-	while ((ch = getopt(argc, argv, "cf")) != -1) {
-		switch (ch) {
-		case 'c':
-			if (type)
-				usage();
-			else
-				type = MSG_CONFIG;
-				break;
-		case 'f':
-			if (type)
-				usage();
-			else
-				type = MSG_FUNCTION;
-				break;
-		default:
-			usage();
-		}
-	}
-
-	if (!type)
+	if (strncmp(argv[1], "-f", strlen("-f")) == 0)
+		type = MSG_FUNCTION;
+	else if (strncmp(argv[1], "-c", strlen("-c")) == 0)
+		type = MSG_CONFIG;
+	else
 		usage();
 
 	argc -= 2;
