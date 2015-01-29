@@ -15,6 +15,7 @@
 #define DEF_SOCK_PATH "/tmp/howm"
 #define ENV_SOCK_VAR "HOWM_SOCK"
 #define BUF_SIZE 1024
+#define VERSION "0.3-pre"
 
 /* The errors (or lack of) that could be sent back by howm. */
 enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_FUNC,
@@ -38,7 +39,7 @@ int main(int argc, char *argv[])
 	if (argc < 2)
 		usage();
 
-	while ((ch = getopt(argc, argv, "cf")) != -1 && !type) {
+	while ((ch = getopt(argc, argv, "vcf")) != -1 && !type) {
 		switch (ch) {
 		case 'c':
 			type = MSG_CONFIG;
@@ -46,6 +47,9 @@ int main(int argc, char *argv[])
 		case 'f':
 			type = MSG_FUNCTION;
 			break;
+		case 'v':
+			printf("%s\n", VERSION);
+			exit(EXIT_SUCCESS);
 		default:
 			usage();
 		}
