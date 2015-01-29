@@ -57,7 +57,9 @@ int main(int argc, char *argv[])
 	argc -= 2;
 	argv += 2;
 
-	if ((sp = getenv(ENV_SOCK_VAR)) != NULL)
+	sp = getenv(ENV_SOCK_VAR);
+
+	if (sp != NULL)
 		snprintf(sock_path, sizeof(sock_path), "%s", sp);
 	else
 		snprintf(sock_path, sizeof(sock_path), "%s", DEF_SOCK_PATH);
