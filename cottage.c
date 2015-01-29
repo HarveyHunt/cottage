@@ -1,12 +1,9 @@
-<<<<<<< HEAD
-=======
 #include <ctype.h>
 #include <getopt.h>
 #include <sys/socket.h>
 #include <string.h>
 #include <sys/un.h>
 #include <stdlib.h>
->>>>>>> feature/ipc_config
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +31,6 @@ int main(int argc, char *argv[])
 	struct sockaddr_un addr;
 	int sock, len = 0, off = 0, n = 0;
 	char data[BUF_SIZE];
-	int ret, rec, type = 0;
 	char *sp;
 	char sock_path[256];
 	int ret, rec, ch, type = 0;
