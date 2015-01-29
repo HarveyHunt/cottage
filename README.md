@@ -13,8 +13,6 @@ Contents
 * [Errors] (#errors)
 
 ##Installation
-
-##Installation
 Cottage is on the [AUR](https://aur.archlinux.org/), there are two packages for it:
 * [cottage-git](https://aur.archlinux.org/packages/cottage-git/) is the bleeding edge package.
 * [cottage](https://aur.archlinux.org/packages/cottage/) is the package based off of stable releases.
@@ -32,12 +30,12 @@ sudo make install
 
 ## Configuration
 
-Configuration is extremely minimal and is done from within the cottage source file.
+Configuration is extremely minimal and is done from within the ```cottage``` source file or by setting environment variables.
 
-* **SOCK_PATH**: The path to where howm's UNIX socket is.
+In order to change the socket that ```cottage``` attempts to connect to, modify the environment variable ```HOWM_SOCK```. For example:
 
 ```
-#define SOCK_PATH "/tmp/howm"
+export HOWM_SOCK=/tmp/howm_test
 ```
 
 * **BUF_SIZE**: The size of the sending buffer.
