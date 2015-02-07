@@ -17,7 +17,7 @@
 enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_FUNC,
 	IPC_ERR_TOO_MANY_ARGS, IPC_ERR_TOO_FEW_ARGS, IPC_ERR_ARG_NOT_INT,
 	IPC_ERR_ARG_NOT_BOOL, IPC_ERR_ARG_TOO_LARGE, IPC_ERR_ARG_TOO_SMALL,
-	IPC_ERR_UNKNOWN_TYPE };
+	IPC_ERR_UNKNOWN_TYPE, IPC_ERR_NO_CONFIG };
 enum msg_type { MSG_FUNCTION = 1, MSG_CONFIG };
 
 static void usage(void);
@@ -126,6 +126,9 @@ int main(int argc, char *argv[])
 		break;
 	case IPC_ERR_UNKNOWN_TYPE:
 		fprintf(stderr, "Unknown type of message\n");
+		break;
+	case IPC_ERR_NO_CONFIG:
+		fprintf(stderr, "Unknown config option\n");
 		break;
 	}
 
