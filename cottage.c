@@ -1,19 +1,23 @@
 #include <ctype.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <sys/un.h>
-#include <stdlib.h>
+#include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
-#include <getopt.h>
 
-#define SOCK_PATH "/tmp/howm"
+#define DEF_SOCK_PATH "/tmp/howm"
+#define ENV_SOCK_VAR "HOWM_SOCK"
 #define BUF_SIZE 1024
+#define VERSION "0.2.1"
 
 /* The errors (or lack of) that could be sent back by howm. */
-enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_FUNC, IPC_ERR_TOO_MANY_ARGS,
-	IPC_ERR_TOO_FEW_ARGS, IPC_ERR_ARG_NOT_INT, IPC_ERR_ARG_TOO_LARGE, IPC_ERR_UNKNOWN_TYPE };
+enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_FUNC,
+	IPC_ERR_TOO_MANY_ARGS, IPC_ERR_TOO_FEW_ARGS, IPC_ERR_ARG_NOT_INT,
+	IPC_ERR_ARG_NOT_BOOL, IPC_ERR_ARG_TOO_LARGE, IPC_ERR_ARG_TOO_SMALL,
+	IPC_ERR_UNKNOWN_TYPE, IPC_ERR_NO_CONFIG };
 enum msg_type { MSG_FUNCTION = 1, MSG_CONFIG };
 
 static void usage(void);
@@ -24,25 +28,24 @@ int main(int argc, char *argv[])
 	struct sockaddr_un addr;
 	int sock, len = 0, off = 0, n = 0;
 	char data[BUF_SIZE];
+	char *sp;
+	char sock_path[256];
 	int ret, rec, ch, type = 0;
 
 	if (argc < 2)
 		usage();
 
-	while ((ch = getopt(argc, argv, "cf")) != -1) {
+	while ((ch = getopt(argc, argv, "vcf")) != -1 && !type) {
 		switch (ch) {
 		case 'c':
-			if (type)
-				usage();
-			else
-				type = MSG_CONFIG;
-				break;
+			type = MSG_CONFIG;
+			break;
 		case 'f':
-			if (type)
-				usage();
-			else
-				type = MSG_FUNCTION;
-				break;
+			type = MSG_FUNCTION;
+			break;
+		case 'v':
+			printf("%s\n", VERSION);
+			exit(EXIT_SUCCESS);
 		default:
 			usage();
 		}
@@ -54,9 +57,16 @@ int main(int argc, char *argv[])
 	argc -= 2;
 	argv += 2;
 
+	sp = getenv(ENV_SOCK_VAR);
+
+	if (sp != NULL)
+		snprintf(sock_path, sizeof(sock_path), "%s", sp);
+	else
+		snprintf(sock_path, sizeof(sock_path), "%s", DEF_SOCK_PATH);
+
 	memset(&addr, 0, sizeof(addr));
 	addr.sun_family = AF_UNIX;
-	snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", SOCK_PATH);
+	snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", sock_path);
 	sock = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (sock == -1) {
@@ -105,11 +115,20 @@ int main(int argc, char *argv[])
 	case IPC_ERR_ARG_NOT_INT:
 		fprintf(stderr, "Argument wasn't an int\n");
 		break;
+	case IPC_ERR_ARG_NOT_BOOL:
+		fprintf(stderr, "Argument wasn't a bool\n");
+		break;
 	case IPC_ERR_ARG_TOO_LARGE:
 		fprintf(stderr, "Argument was too large\n");
 		break;
+	case IPC_ERR_ARG_TOO_SMALL:
+		fprintf(stderr, "Argument was too small\n");
+		break;
 	case IPC_ERR_UNKNOWN_TYPE:
 		fprintf(stderr, "Unknown type of message\n");
+		break;
+	case IPC_ERR_NO_CONFIG:
+		fprintf(stderr, "Unknown config option\n");
 		break;
 	}
 
