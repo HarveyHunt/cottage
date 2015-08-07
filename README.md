@@ -62,10 +62,10 @@ It is possible to call operators using cottage, but it requires you call functio
 
 ```
 cottage -f op_kill
-cottage -f set_count 2
+cottage -f count 2
 cottage -f motion w
 ```
 
 ## Errors
 
-Upon error, howm will return a response  code. Cottage will print a relevant error message and return the error number to its caller.
+Upon error, howm will return a response  code. Cottage will print a relevant error message and return ```EXIT_FAILURE```.
