@@ -21,16 +21,16 @@ enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_FUNC,
 enum msg_type { MSG_FUNCTION = 1, MSG_CONFIG };
 
 static void usage(void);
+static int send_command(int sock, int argc, char *argv[], int type);
+static int setup_socket(struct sockaddr_un addr);
+static void handle_error(int err);
 
 /* Send a command to howm and wait for its reply. */
 int main(int argc, char *argv[])
 {
 	struct sockaddr_un addr;
-	int sock, len = 0, off = 0, n = 0;
-	char data[BUF_SIZE];
-	char *sp;
-	char sock_path[256];
-	int ret, rec, ch, type = 0;
+	int sock;
+	int ret, recvd, ch, type = 0;
 
 	if (argc < 2)
 		usage();
@@ -57,27 +57,32 @@ int main(int argc, char *argv[])
 	argc -= 2;
 	argv += 2;
 
-	sp = getenv(ENV_SOCK_VAR);
+	sock = setup_socket(addr);
 
-	if (sp != NULL)
-		snprintf(sock_path, sizeof(sock_path), "%s", sp);
-	else
-		snprintf(sock_path, sizeof(sock_path), "%s", DEF_SOCK_PATH);
-
-	memset(&addr, 0, sizeof(addr));
-	addr.sun_family = AF_UNIX;
-	snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", sock_path);
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
-
-	if (sock == -1) {
-		perror("Socket error");
+	if (send_command(sock, argc, argv, type) == -1) {
+		perror("Failed to send data");
 		exit(EXIT_FAILURE);
 	}
 
-	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
-		perror("Connection error");
+	recvd = read(sock, &ret, sizeof(ret));
+	if (recvd == -1)
+		perror("Failed to receive response");
+
+	if (ret != IPC_ERR_NONE)
+		handle_error(ret);
+
+	if (close(sock) == -1) {
+		perror("Failed to close socket.\n");
 		exit(EXIT_FAILURE);
 	}
+
+	return ret;
+}
+
+static int send_command(int sock, int argc, char *argv[], int type)
+{
+	int n, len = 0, off = 0;
+	char data[BUF_SIZE];
 
 	n = snprintf(data, sizeof(data) - (2 * sizeof(char)), "%c%c", type, 0);
 	len += n;
@@ -87,15 +92,11 @@ int main(int argc, char *argv[])
 		len += n;
 	}
 
-	if (write(sock, data, len) == -1) {
-		perror("Failed to send data");
-		exit(EXIT_FAILURE);
-	}
+	return write(sock, data, len);
+}
 
-	rec = read(sock, &ret, sizeof(ret));
-	if (rec == -1)
-		perror("Failed to receive response");
-
+static void handle_error(int ret)
+{
 	switch (ret) {
 	case IPC_ERR_SYNTAX:
 		fprintf(stderr, "Invalid syntax.\n");
@@ -130,17 +131,44 @@ int main(int argc, char *argv[])
 	case IPC_ERR_NO_CONFIG:
 		fprintf(stderr, "Unknown config option\n");
 		break;
+	default:
+		fprintf(stderr, "Unknown error code\n");
+		break;
 	}
+}
 
-	if (close(sock) == -1) {
-		perror("Failed to close socket.\n");
+static int setup_socket(struct sockaddr_un addr)
+{
+	char *sp;
+	char sock_path[256];
+	int sock;
+
+	sp = getenv(ENV_SOCK_VAR);
+
+	if (sp != NULL)
+		snprintf(sock_path, sizeof(sock_path), "%s", sp);
+	else
+		snprintf(sock_path, sizeof(sock_path), "%s", DEF_SOCK_PATH);
+
+	memset(&addr, 0, sizeof(addr));
+	addr.sun_family = AF_UNIX;
+	snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", sock_path);
+	sock = socket(AF_UNIX, SOCK_STREAM, 0);
+
+	if (sock == -1) {
+		perror("Socket error");
 		exit(EXIT_FAILURE);
 	}
 
-	return ret;
+	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
+		perror("Connection error");
+		exit(EXIT_FAILURE);
+	}
+
+	return sock;
 }
 
-void usage(void)
+static void usage(void)
 {
 	fprintf(stderr, "usage: cottage -f|-c <args>\n");
 	exit(EXIT_FAILURE);
