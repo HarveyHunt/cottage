@@ -18,30 +18,32 @@ enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_FUNC,
 	IPC_ERR_TOO_MANY_ARGS, IPC_ERR_TOO_FEW_ARGS, IPC_ERR_ARG_NOT_INT,
 	IPC_ERR_ARG_NOT_BOOL, IPC_ERR_ARG_TOO_LARGE, IPC_ERR_ARG_TOO_SMALL,
 	IPC_ERR_UNKNOWN_TYPE, IPC_ERR_NO_CONFIG };
-enum msg_type { MSG_FUNCTION = 1, MSG_CONFIG };
+enum msg_type { MSG_FUNCTION = 1, MSG_CONFIG, MSG_OP_HELPER };
 
 static void usage(void);
-static int send_command(int sock, int argc, char *argv[], int type);
+static int send_command(int argc, char *argv[], int type);
+static int send_op(char *argv[]);
 static int setup_socket(struct sockaddr_un addr);
 static void handle_error(int err);
 
 /* Send a command to howm and wait for its reply. */
 int main(int argc, char *argv[])
 {
-	struct sockaddr_un addr;
-	int sock;
-	int ret, recvd, ch, type = 0;
+	int ret, ch, type = 0;
 
 	if (argc < 2)
 		usage();
 
-	while ((ch = getopt(argc, argv, "vcf")) != -1 && !type) {
+	while ((ch = getopt(argc, argv, "vcfo")) != -1 && !type) {
 		switch (ch) {
 		case 'c':
 			type = MSG_CONFIG;
 			break;
 		case 'f':
 			type = MSG_FUNCTION;
+			break;
+		case 'o':
+			type = MSG_OP_HELPER;
 			break;
 		case 'v':
 			printf("%s\n", VERSION);
@@ -51,22 +53,50 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!type)
+	if (!type || (type == MSG_OP_HELPER && argc < 5))
 		usage();
 
 	argc -= 2;
 	argv += 2;
 
+	ret = type == MSG_OP_HELPER ? send_op(argv)
+					: send_command(argc, argv, type);
+
+	if (ret == -1)
+		perror("Failed to send data");
+
+	if (ret != IPC_ERR_NONE)
+		return EXIT_FAILURE;
+
+	return EXIT_SUCCESS;
+}
+
+static int send_command(int argc, char *argv[], int type)
+{
+	struct sockaddr_un addr;
+	int sock;
+	int n, len = 0, off = 0, ret, recvd;
+	char data[BUF_SIZE];
+
 	sock = setup_socket(addr);
 
-	if (send_command(sock, argc, argv, type) == -1) {
-		perror("Failed to send data");
-		exit(EXIT_FAILURE);
+	n = snprintf(data, sizeof(data) - (2 * sizeof(char)), "%c%c", type, 0);
+	len += n;
+	off += n;
+	for (; argc > 0 && sizeof(data) - off > 0; off += n, argc--, argv++) {
+		n = snprintf(data + off, sizeof(data) - off, "%s%c", *argv, 0);
+		len += n;
 	}
 
+	ret = write(sock, data, len);
+	if (ret == -1)
+		perror("Failed to send command");
+
 	recvd = read(sock, &ret, sizeof(ret));
-	if (recvd == -1)
+	if (recvd == -1) {
 		perror("Failed to receive response");
+		ret = -1;
+	}
 
 	if (ret != IPC_ERR_NONE)
 		handle_error(ret);
@@ -79,20 +109,34 @@ int main(int argc, char *argv[])
 	return ret;
 }
 
-static int send_command(int sock, int argc, char *argv[], int type)
+/**
+ * Howm expects a connection, a single command and then for the
+ * socket to be closed. send_command opens and closes a socket,
+ * so howm behaves as if cottage were to be invoked 3 times.
+ */
+static int send_op(char *argv[])
 {
-	int n, len = 0, off = 0;
-	char data[BUF_SIZE];
+	int ret = 0;
+	char *op[] = { *argv++ };
+	char *count[] = { "count", *argv++ };
+	char *motion[] = { "motion", *argv };
 
-	n = snprintf(data, sizeof(data) - (2 * sizeof(char)), "%c%c", type, 0);
-	len += n;
-	off += n;
-	for (; argc > 0 && sizeof(data) - off > 0; off += n, argc--, argv++) {
-		n = snprintf(data + off, sizeof(data) - off, "%s%c", *argv, 0);
-		len += n;
-	}
+	/* Send op_* command */
+	ret = send_command(1, op, MSG_FUNCTION);
+	if (ret != IPC_ERR_NONE)
+		return ret;
 
-	return write(sock, data, len);
+	/* Send count x command */
+	ret = send_command(2, count, MSG_FUNCTION);
+	if (ret != IPC_ERR_NONE)
+		return ret;
+
+	/* Send motion x command */
+	ret = send_command(2, motion, MSG_FUNCTION);
+	if (ret != IPC_ERR_NONE)
+		return ret;
+
+	return IPC_ERR_NONE;
 }
 
 static void handle_error(int ret)
@@ -170,6 +214,6 @@ static int setup_socket(struct sockaddr_un addr)
 
 static void usage(void)
 {
-	fprintf(stderr, "usage: cottage -f|-c <args>\n");
+	fprintf(stderr, "usage: cottage -f|-c|-o <args>\n");
 	exit(EXIT_FAILURE);
 }

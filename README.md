@@ -58,12 +58,19 @@ Calling one of howm's functions is done in the following manner:
 cottage -f function_name <args>
 ```
 
-It is possible to call operators using cottage, but it requires you call functions to set the operator, the count and finally the motion. Here is an example:
+It is possible to call operators using cottage by calling functions to set the operator, the count and finally the motion. Here is an example:
 
 ```
 cottage -f op_kill
 cottage -f count 2
 cottage -f motion w
+```
+
+Alternatively, it is possible to execute a complete operation using a single
+command:
+
+```
+cottage -o op_kill 2 w
 ```
 
 ## Errors
