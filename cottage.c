@@ -11,37 +11,39 @@
 #define DEF_SOCK_PATH "/tmp/howm"
 #define ENV_SOCK_VAR "HOWM_SOCK"
 #define BUF_SIZE 1024
-#define VERSION "0.2.1"
+#define VERSION "0.3"
 
 /* The errors (or lack of) that could be sent back by howm. */
 enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_FUNC,
 	IPC_ERR_TOO_MANY_ARGS, IPC_ERR_TOO_FEW_ARGS, IPC_ERR_ARG_NOT_INT,
 	IPC_ERR_ARG_NOT_BOOL, IPC_ERR_ARG_TOO_LARGE, IPC_ERR_ARG_TOO_SMALL,
 	IPC_ERR_UNKNOWN_TYPE, IPC_ERR_NO_CONFIG };
-enum msg_type { MSG_FUNCTION = 1, MSG_CONFIG };
+enum msg_type { MSG_FUNCTION = 1, MSG_CONFIG, MSG_OP_HELPER };
 
 static void usage(void);
+static int send_command(int argc, char *argv[], int type);
+static int send_op(char *argv[]);
+static int setup_socket(struct sockaddr_un addr);
+static void handle_error(int err);
 
 /* Send a command to howm and wait for its reply. */
 int main(int argc, char *argv[])
 {
-	struct sockaddr_un addr;
-	int sock, len = 0, off = 0, n = 0;
-	char data[BUF_SIZE];
-	char *sp;
-	char sock_path[256];
-	int ret, rec, ch, type = 0;
+	int ret, ch, type = 0;
 
 	if (argc < 2)
 		usage();
 
-	while ((ch = getopt(argc, argv, "vcf")) != -1 && !type) {
+	while ((ch = getopt(argc, argv, "vcfo")) != -1 && !type) {
 		switch (ch) {
 		case 'c':
 			type = MSG_CONFIG;
 			break;
 		case 'f':
 			type = MSG_FUNCTION;
+			break;
+		case 'o':
+			type = MSG_OP_HELPER;
 			break;
 		case 'v':
 			printf("%s\n", VERSION);
@@ -51,33 +53,32 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!type)
+	if (!type || (type == MSG_OP_HELPER && argc < 5))
 		usage();
 
 	argc -= 2;
 	argv += 2;
 
-	sp = getenv(ENV_SOCK_VAR);
+	ret = type == MSG_OP_HELPER ? send_op(argv)
+					: send_command(argc, argv, type);
 
-	if (sp != NULL)
-		snprintf(sock_path, sizeof(sock_path), "%s", sp);
-	else
-		snprintf(sock_path, sizeof(sock_path), "%s", DEF_SOCK_PATH);
+	if (ret == -1)
+		perror("Failed to send data");
 
-	memset(&addr, 0, sizeof(addr));
-	addr.sun_family = AF_UNIX;
-	snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", sock_path);
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (ret != IPC_ERR_NONE)
+		return EXIT_FAILURE;
 
-	if (sock == -1) {
-		perror("Socket error");
-		exit(EXIT_FAILURE);
-	}
+	return EXIT_SUCCESS;
+}
 
-	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
-		perror("Connection error");
-		exit(EXIT_FAILURE);
-	}
+static int send_command(int argc, char *argv[], int type)
+{
+	struct sockaddr_un addr;
+	int sock;
+	int n, len = 0, off = 0, ret, recvd;
+	char data[BUF_SIZE];
+
+	sock = setup_socket(addr);
 
 	n = snprintf(data, sizeof(data) - (2 * sizeof(char)), "%c%c", type, 0);
 	len += n;
@@ -87,15 +88,59 @@ int main(int argc, char *argv[])
 		len += n;
 	}
 
-	if (write(sock, data, len) == -1) {
-		perror("Failed to send data");
+	ret = write(sock, data, len);
+	if (ret == -1)
+		perror("Failed to send command");
+
+	recvd = read(sock, &ret, sizeof(ret));
+	if (recvd == -1) {
+		perror("Failed to receive response");
+		ret = -1;
+	}
+
+	if (ret != IPC_ERR_NONE)
+		handle_error(ret);
+
+	if (close(sock) == -1) {
+		perror("Failed to close socket.\n");
 		exit(EXIT_FAILURE);
 	}
 
-	rec = read(sock, &ret, sizeof(ret));
-	if (rec == -1)
-		perror("Failed to receive response");
+	return ret;
+}
 
+/**
+ * Howm expects a connection, a single command and then for the
+ * socket to be closed. send_command opens and closes a socket,
+ * so howm behaves as if cottage were to be invoked 3 times.
+ */
+static int send_op(char *argv[])
+{
+	int ret = 0;
+	char *op[] = { *argv++ };
+	char *count[] = { "count", *argv++ };
+	char *motion[] = { "motion", *argv };
+
+	/* Send op_* command */
+	ret = send_command(1, op, MSG_FUNCTION);
+	if (ret != IPC_ERR_NONE)
+		return ret;
+
+	/* Send count x command */
+	ret = send_command(2, count, MSG_FUNCTION);
+	if (ret != IPC_ERR_NONE)
+		return ret;
+
+	/* Send motion x command */
+	ret = send_command(2, motion, MSG_FUNCTION);
+	if (ret != IPC_ERR_NONE)
+		return ret;
+
+	return IPC_ERR_NONE;
+}
+
+static void handle_error(int ret)
+{
 	switch (ret) {
 	case IPC_ERR_SYNTAX:
 		fprintf(stderr, "Invalid syntax.\n");
@@ -130,18 +175,45 @@ int main(int argc, char *argv[])
 	case IPC_ERR_NO_CONFIG:
 		fprintf(stderr, "Unknown config option\n");
 		break;
+	default:
+		fprintf(stderr, "Unknown error code\n");
+		break;
 	}
+}
 
-	if (close(sock) == -1) {
-		perror("Failed to close socket.\n");
+static int setup_socket(struct sockaddr_un addr)
+{
+	char *sp;
+	char sock_path[256];
+	int sock;
+
+	sp = getenv(ENV_SOCK_VAR);
+
+	if (sp != NULL)
+		snprintf(sock_path, sizeof(sock_path), "%s", sp);
+	else
+		snprintf(sock_path, sizeof(sock_path), "%s", DEF_SOCK_PATH);
+
+	memset(&addr, 0, sizeof(addr));
+	addr.sun_family = AF_UNIX;
+	snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", sock_path);
+	sock = socket(AF_UNIX, SOCK_STREAM, 0);
+
+	if (sock == -1) {
+		perror("Socket error");
 		exit(EXIT_FAILURE);
 	}
 
-	return ret;
+	if (connect(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
+		perror("Connection error");
+		exit(EXIT_FAILURE);
+	}
+
+	return sock;
 }
 
-void usage(void)
+static void usage(void)
 {
-	fprintf(stderr, "usage: cottage -f|-c <args>\n");
+	fprintf(stderr, "usage: cottage -f|-c|-o <args>\n");
 	exit(EXIT_FAILURE);
 }
