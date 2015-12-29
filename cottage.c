@@ -11,7 +11,7 @@
 #define DEF_SOCK_PATH "/tmp/howm"
 #define ENV_SOCK_VAR "HOWM_SOCK"
 #define BUF_SIZE 1024
-#define VERSION "0.2.1"
+#define VERSION "0.3"
 
 /* The errors (or lack of) that could be sent back by howm. */
 enum ipc_errs { IPC_ERR_NONE, IPC_ERR_SYNTAX, IPC_ERR_ALLOC, IPC_ERR_NO_FUNC,
