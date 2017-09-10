@@ -16,7 +16,7 @@ clean:
 	@rm -f $(BIN_NAME)
 
 install:
-	@install -m 0755 $(BIN_NAME) -t $(BIN_DIR)
+	@install -Dm 0755 $(BIN_NAME) -t $(BIN_DIR)
 
 check:
 	@./checkpatch.pl --no-tree --ignore LONG_LINE,NEW_TYPEDEFS,UNNECESSARY_ELSE,MACRO_WITH_FLOW_CONTROL -f $(SRCS)
