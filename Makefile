@@ -2,7 +2,7 @@ CFLAGS += -Wall -pedantic -std=c99
 CC ?= clang
 BIN_NAME ?= cottage
 PREFIX ?= /usr/local
-BIN_DIR ?= $(DESTDIR)$(PREFIX)/bin
+BIN_DIR ?= $(PREFIX)/bin
 SRCS = cottage.c
 
 all:
@@ -16,7 +16,7 @@ clean:
 	@rm -f $(BIN_NAME)
 
 install:
-	@install -Dm 0755 $(BIN_NAME) -t $(BIN_DIR)
+	@install -Dm 0755 $(BIN_NAME) $(DESTDIR)$(BIN_DIR)/$(BIN_NAME)
 
 check:
 	@./checkpatch.pl --no-tree --ignore LONG_LINE,NEW_TYPEDEFS,UNNECESSARY_ELSE,MACRO_WITH_FLOW_CONTROL -f $(SRCS)
