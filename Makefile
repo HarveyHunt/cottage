@@ -3,8 +3,8 @@ CC ?= clang
 BIN_NAME ?= cottage
 SRCS = cottage.c 
 
-all:
-	$(CC) $(SRCS) $(CFLAGS) -o $(BIN_NAME)
+all: cottage
+cottage: cottage.o
 
 debug: CFLAGS += -O0 -g -DDEBUG
 debug: all
