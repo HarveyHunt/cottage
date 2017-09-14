@@ -4,7 +4,7 @@ BIN_NAME ?= cottage
 SRCS = cottage.c 
 
 all:
-	$(CC) $(SRCS) $(CFLAGS) -o $(BIN_NAME)
+	$(CC) $(SRCS) $(CFLAGS) -o $(BIN_NAME) $(LDFLAGS)
 
 debug: CFLAGS += -O0 -g -DDEBUG
 debug: all
