@@ -5,8 +5,8 @@ PREFIX ?= /usr/local
 BIN_DIR ?= $(PREFIX)/bin
 SRCS = cottage.c
 
-all:
-	$(CC) $(SRCS) $(CFLAGS) -o $(BIN_NAME)
+all: cottage
+cottage: cottage.o
 
 debug: CFLAGS += -O0 -g -DDEBUG
 debug: all
